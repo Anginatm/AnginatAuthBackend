@@ -1,0 +1,23 @@
+networks:
+  microservices-network:
+    external: true
+
+services:
+  qr-exhibitor-networking:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: anginat-auth-backend
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5000:5000"
+    networks:
+      - microservices-network
+
+
+
+
+
+

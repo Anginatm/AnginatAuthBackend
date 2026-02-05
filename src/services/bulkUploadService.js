@@ -2,9 +2,7 @@ const XLSX = require('xlsx');
 const { parse } = require('csv-parse');
 const fs = require('fs');
 const QRCode = require('qrcode');
-const AuthCode = require('../models/AuthCode');
-const Brand = require('../models/Brand');
-const BulkUploadJob = require('../models/BulkUploadJob');
+const { AuthCode, Brand, BulkUploadJob } = require('../models');
 const s3Service = require('../utils/s3Service');
 
 class BulkUploadService {

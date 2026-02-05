@@ -281,78 +281,34 @@ class BulkUploadService {
             error: 'Duplicate code',
           });
         } else {
-          newCodes.push(item.code);
+          const codeDoc = {
+            code: item.code,
+            brand: brandId,
+          };
+          
+          // Add productId if provided
+          if (productId) {
+            codeDoc.product = productId;
+          }
+          
+          newCodes.push(codeDoc);
         }
       }
 
-      // Generate QR codes and prepare documents
+      // Insert new codes
       let insertedCount = 0;
       if (newCodes.length > 0) {
         try {
-          // Get frontend URL from environment
-          const frontendUrl = process.env.FRONTEND_BASE_URL;
-          if (!frontendUrl) {
-            throw new Error('FRONTEND_BASE_URL environment variable is not set');
-          }
-
-          // Generate QR codes for each code
-          const codeDocs = [];
-          for (const code of newCodes) {
-            try {
-              // Generate QR code data
-              const qrData = `${frontendUrl}?code=${encodeURIComponent(code)}`;
-              
-              // Generate QR code as PNG buffer
-              const qrBuffer = await QRCode.toBuffer(qrData, {
-                errorCorrectionLevel: 'H',
-                type: 'image/png',
-                quality: 0.95,
-                margin: 1,
-                width: 300,
-              });
-
-              // Upload to S3
-              const fileName = `${code}-${Date.now()}.png`;
-              const s3Url = await s3Service.uploadBuffer(qrBuffer, fileName, 'image/png');
-
-              // Prepare code document
-              const codeDoc = {
-                code,
-                brand: brandId,
-                qrCodeUrl: s3Url,
-              };
-              
-              // Add productId if provided
-              if (productId) {
-                codeDoc.product = productId;
-              }
-              
-              codeDocs.push(codeDoc);
-            } catch (qrError) {
-              console.error(`Error generating QR code for ${code}:`, qrError);
-              errors.push({
-                row: codes.find(c => c.code === code)?.rowNumber || 0,
-                code,
-                error: `QR code generation failed: ${qrError.message}`,
-              });
-            }
-          }
-
-          // Insert codes with QR code URLs
-          if (codeDocs.length > 0) {
-            const result = await AuthCode.insertMany(codeDocs, {
-              ordered: false,
-              writeConcern: { w: 1 },
-            });
-            insertedCount = result.length;
-          }
+          const result = await AuthCode.insertMany(newCodes, {
+            ordered: false, // Continue on duplicate key errors
+            writeConcern: { w: 1 },
+          });
+          insertedCount = result.length;
         } catch (error) {
           // Handle duplicate key errors from race conditions
           if (error.code === 11000 && error.writeErrors) {
             insertedCount = newCodes.length - error.writeErrors.length;
             duplicatesCount += error.writeErrors.length;
-          } else if (error.message.includes('FRONTEND_BASE_URL')) {
-            throw error;
           } else {
             throw error;
           }

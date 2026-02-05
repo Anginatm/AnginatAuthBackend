@@ -1,4 +1,5 @@
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
 const config = require('../config');
 const ApiResponse = require('../utils/apiResponse');
 
@@ -31,9 +32,10 @@ const verifyLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    // Use IP + user agent for better identification
-    return `${req.ip}-${req.headers['user-agent'] || 'unknown'}`;
+  keyGenerator: (req, res) => {
+    // Properly handle IPv6 addresses using the helper function
+    const ip = ipKeyGenerator(req, res);
+    return `${ip}-${req.headers['user-agent'] || 'unknown'}`;
   },
   handler: (req, res) => {
     return ApiResponse.tooManyRequests(res, 'Too many verification requests. Please try again later.');

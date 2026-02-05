@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API routes
-app.use('/pr-auth/api', routes);
+app.use('/api', routes);
 
 // Root
 app.get('/', (req, res) => {

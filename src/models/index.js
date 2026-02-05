@@ -3,4 +3,5 @@ module.exports = {
   Brand: require('./Brand'),
   AuthCode: require('./AuthCode'),
   Product: require('./Product'),
+  BulkUploadJob: require('./BulkUploadJob'),
 };
